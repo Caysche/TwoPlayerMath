@@ -9,7 +9,7 @@
 #import "ViewController.h"
 
 @interface ViewController ()
-@property (weak, nonatomic) IBOutlet UILabel *additionQuestionLabel;
+@property (weak, nonatomic) IBOutlet UILabel *questionLabel;
 @property (weak, nonatomic) IBOutlet UILabel *solutionLabel;
 @property (weak, nonatomic) IBOutlet UILabel *rightWrongLabel;
 @property (weak, nonatomic) IBOutlet UILabel *player1Lives;
@@ -26,7 +26,7 @@
     
     _gameModel = [[GameModel alloc] init];
     
-    _additionQuestionLabel.text = [_gameModel generateAdditionQuestion];
+    _questionLabel.text = [_gameModel generateQuestion];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -64,10 +64,15 @@
     _solutionLabel.text = [_gameModel returnButtonString:0];
 }
 
+- (IBAction)pressMinus:(UIButton *)sender {
+    _solutionLabel.text = [_gameModel returnMinusButtonString];
+}
+
+
 - (IBAction)enterButton:(UIButton *)sender {
     Player *currentPlayer = [_gameModel returnCurrentPlayer];
     
-    self.rightWrongLabel.text = [_gameModel checkForRightAnswer:currentPlayer.solutionNumber];
+    self.rightWrongLabel.text = [_gameModel checkForRightAnswer:currentPlayer.solutionNumber onLabel:_rightWrongLabel];
     
     if (currentPlayer == _gameModel.player1) {
         self.player1Lives.text = [NSString stringWithFormat:@"Player 1 Lives:%d", _gameModel.player1.lives];
@@ -79,10 +84,47 @@
     
     self.rightWrongLabel.hidden = NO;
     
-    _gameModel.player1.solutionNumber = 0;
-    _gameModel.player2.solutionNumber = 0;
-    _solutionLabel.text = @"solution";
-    _additionQuestionLabel.text = [_gameModel generateAdditionQuestion];
+    if (currentPlayer.lives <= 0) {
+        UIAlertController * alert=   [UIAlertController
+                                      alertControllerWithTitle:@"Game over!"
+                                      message:@"Do you want to play again?"
+                                      preferredStyle:UIAlertControllerStyleAlert];
+        
+        UIAlertAction* yes = [UIAlertAction
+                             actionWithTitle:@"Yes"
+                             style:UIAlertActionStyleDefault
+                             handler:^(UIAlertAction * action)
+                             {
+                                 _gameModel.player1.lives = 3;
+                                 self.player1Lives.text = [NSString stringWithFormat:@"Player 1 Lives:%d", _gameModel.player1.lives];
+                                 _gameModel.player2.lives = 3;
+                                 self.player2Lives.text = [NSString stringWithFormat:@"Player 2 Lives:%d", _gameModel.player2.lives];
+                                 [alert dismissViewControllerAnimated:YES completion:nil];
+                                 
+                                 _gameModel.player1.solutionNumber = 0;
+                                 _gameModel.player2.solutionNumber = 0;
+                                 _solutionLabel.text = @"solution";
+                                 _questionLabel.text = [_gameModel generateQuestion];
+                                 
+                             }];
+        UIAlertAction* no = [UIAlertAction
+                                 actionWithTitle:@"No"
+                                 style:UIAlertActionStyleDefault
+                                 handler:^(UIAlertAction * action)
+                                 {
+                                     self.rightWrongLabel.text = @"Game over!";
+                                     self.rightWrongLabel.hidden = NO;
+                                     [alert dismissViewControllerAnimated:YES completion:nil];
+                                     
+                                 }];
+        
+        [alert addAction:yes];
+        [alert addAction:no];
+        
+        [self presentViewController:alert animated:YES completion:nil];
+        
+    }
+
     
 }
 
